@@ -34,6 +34,7 @@ class L3GD20:
     def range(self, new_range):
         self._range = new_range
         if self._range == self.RANGE_250DPS:
+            ## Why do this instead of setting the DPS as a constant above?
             self._dps = 0.00875
         elif self._range == self.RANGE_500DPS:
             self._dps = 0.0175
