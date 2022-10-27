@@ -6,11 +6,7 @@ import leaf
 
 GYRO_MAX_RATE = 500 # degrees per second
 PIXELS = 3
-DEFAULT_GYRO_DATA=(
-  x = [255.0, 0.0],
-  y = [255.0, 0.0],
-  z = [255.0, 0.0]
-)
+DEFAULT_GYRO_DATA={'x':[255.0, 0.0], 'y':[255.0, 0.0], 'z':[255.0, 0.0]}
 
 def rate_to_color(max_dps, rate):
     return round((abs(rate) / max_dps) * 256)
@@ -24,28 +20,49 @@ def get_range(rng, new_val):
 ### If the gyro is static when the program starts we can set thresholds
 ### for when we want to assume interaction is occurring
 def get_threshold_range(sample_func, default_data=DEFAULT_GYRO_DATA):
-    threshold_range = copy(DEFAULT_GYRO_DATA)
+    threshold_range = DEFAULT_GYRO_DATA.copy()
 
+    ### Values tend to be sporadic for the first moments
+    print('Waiting to settle down...')
+    time.sleep(4)
+
+    print('Beginning threshold test')
     ### Sample 20 times over 5 seconds
     for i in range(0, 20):
         x, y, z = sample_func()
+        print(f'Sample {i}: {x}, {y} , {z}')
 
-        threshold_range.x = get_range(threshold_range.x, x)
-        threshold_range.y = get_range(threshold_range.y, y)
-        threshold_range.z = get_range(threshold_range.z, z)
+        threshold_range['x'] = get_range(threshold_range['x'], x)
+        threshold_range['y'] = get_range(threshold_range['y'], y)
+        threshold_range['z'] = get_range(threshold_range['z'], z)
 
         time.sleep(0.25)
 
     return threshold_range
 
-### Returns true if the value is beyond the threshold
-def out_threshold(thresholds, sample_func):
-    x, y, z = sample_func()
-
+def build_threshold_func(thresholds, sample_func):
     def test(rng, v):
-        return v < rng[0] || v > rng[1]
+        return v < rng[0] or v > rng[1]
 
-    return test(thresholds.x, x) || test(thresholds.y, y) || test(thresholds.z, z)
+    def hasAttention():
+        x, y, z = sample_func()
+        print(f'Sample: {x}, {y} , {z}')
+
+        if test(thresholds['x'], x):
+          print('X outside threshold ', thresholds['x'])
+          return True
+        elif test(thresholds['y'], y):
+          print('Y outside threshold ', thresholds['y'])
+          return True
+        elif test(thresholds['z'], z):
+          print('Z outside threshold ', thresholds['z'])
+          return True
+
+        return False
+
+        #return test(thresholds['x'], x) or test(thresholds['y'], y) or test(thresholds['z'], z)
+
+    return hasAttention
 
 
 def main():
@@ -69,8 +86,10 @@ def main():
     leds = neopixel.NeoPixel(machine.Pin(21, machine.Pin.OUT), PIXELS, timing=1)
     print("Cool.")
 
+    attentionFunc = build_threshold_func(thresholds, gyro.sample)
+
     print("Growing Leaf...")
-    leaf = leaf.Leaf(out_threshold, leds)
+    foliage = leaf.Leaf(attentionFunc, leds)
     print("Leaf ready.")
 
     ### Removed touch
@@ -82,7 +101,7 @@ def main():
     # led_idx = 0
 
     while True:
-        leaf.update()
+        foliage.update()
         # if led_idx >= PIXELS:
         #     led_idx = 0
 
@@ -98,6 +117,7 @@ def main():
 
         # print("Touch pad reading:", pad.read())
 
+        time.sleep(0.5)
 
 
 
