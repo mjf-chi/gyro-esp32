@@ -117,7 +117,7 @@ def main():
 
         # print("Touch pad reading:", pad.read())
 
-        time.sleep(0.5)
+        time.sleep(0.125)
 
 
 

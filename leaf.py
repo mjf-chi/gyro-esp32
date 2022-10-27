@@ -10,7 +10,7 @@ class Leaf:
     BORED = 'Bored'
     UPSET = 'Upset'
 
-    BASE_TTL = 45
+    BASE_TTL = 180
     BORED_THRESHOLD = math.floor(BASE_TTL * (2/3))
     UPSET_THRESHOLD = math.floor(BASE_TTL * (1/3))
 
